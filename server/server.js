@@ -86,6 +86,15 @@ const calculateDuration = (clockIn, clockOut) => {
   return Math.round((end - start) / 1000 / 60); // minutes
 };
 
+// Root route for health check
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Blackpoint Employee Portal API',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ============ TIME ENTRY ENDPOINTS ============
 
 // Clock In

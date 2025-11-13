@@ -18,7 +18,6 @@ services:
   - type: web
     name: blackpoint-frontend
     env: static
-    region: oregon
     buildCommand: cd client && npm install && npm run build
     staticPublishPath: ./client/build
     pullRequestPreviewsEnabled: false

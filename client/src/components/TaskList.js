@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-function TaskList() {
+function TaskList({ employeeName }) {
   const [tasks, setTasks] = useState([]);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -30,7 +30,8 @@ function TaskList() {
     try {
       await axios.post('/api/tasks', {
         taskName: newTaskName,
-        description: newTaskDescription
+        description: newTaskDescription,
+        createdBy: employeeName
       });
       setNewTaskName('');
       setNewTaskDescription('');
@@ -166,6 +167,7 @@ function TaskList() {
                 <div className="task-name">
                   {task.task_name}
                   {task.is_default && <span className="default-badge">Daily</span>}
+                  {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
                 </div>
                 {task.description && (
                   <div className="task-description">{task.description}</div>
@@ -202,6 +204,7 @@ function TaskList() {
                     <div className="task-name">
                       {task.task_name}
                       {task.is_default && <span className="default-badge">Daily</span>}
+                      {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
                     </div>
                     {task.description && (
                       <div className="task-description">{task.description}</div>

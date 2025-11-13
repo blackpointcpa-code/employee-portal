@@ -48,7 +48,8 @@ db.serialize(() => {
       completed BOOLEAN DEFAULT 0,
       date TEXT NOT NULL,
       completed_at DATETIME,
-      is_default BOOLEAN DEFAULT 0
+      is_default BOOLEAN DEFAULT 0,
+      created_by TEXT
     )
   `);
 
@@ -422,12 +423,12 @@ app.get('/api/tasks', (req, res) => {
 
 // Create task
 app.post('/api/tasks', (req, res) => {
-  const { taskName, description, date } = req.body;
+  const { taskName, description, date, createdBy } = req.body;
   const today = date || getToday();
 
   db.run(
-    'INSERT INTO tasks (task_name, description, date) VALUES (?, ?, ?)',
-    [taskName, description, today],
+    'INSERT INTO tasks (task_name, description, date, created_by) VALUES (?, ?, ?, ?)',
+    [taskName, description, today, createdBy],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -438,7 +439,8 @@ app.post('/api/tasks', (req, res) => {
         taskName,
         description,
         completed: false,
-        date: today
+        date: today,
+        createdBy
       });
     }
   );

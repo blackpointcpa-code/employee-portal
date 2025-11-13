@@ -117,7 +117,7 @@ function App() {
             </div>
 
             <div className="section task-section">
-              <TaskList />
+              <TaskList employeeName={employeeName} />
             </div>
 
             <div className="section entries-section">

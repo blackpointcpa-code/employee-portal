@@ -9,21 +9,33 @@ function App() {
   const [employeeName, setEmployeeName] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loginError, setLoginError] = useState('');
+
+  // Authorized employees
+  const authorizedEmployees = ['Brendan Abbott', 'Kyla Abbott'];
 
   useEffect(() => {
     // Check if employee name is stored
     const storedName = localStorage.getItem('employeeName');
-    if (storedName) {
+    if (storedName && authorizedEmployees.includes(storedName)) {
       setEmployeeName(storedName);
       setIsLoggedIn(true);
+    } else if (storedName) {
+      // Clear invalid stored name
+      localStorage.removeItem('employeeName');
     }
   }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (employeeName.trim()) {
-      localStorage.setItem('employeeName', employeeName);
+    const trimmedName = employeeName.trim();
+    
+    if (authorizedEmployees.includes(trimmedName)) {
+      localStorage.setItem('employeeName', trimmedName);
       setIsLoggedIn(true);
+      setLoginError('');
+    } else {
+      setLoginError('Access denied. Only authorized employees can sign in.');
     }
   };
 
@@ -51,6 +63,11 @@ function App() {
               className="input"
               required
             />
+            {loginError && (
+              <div style={{ color: '#e74c3c', marginTop: '10px', fontSize: '14px' }}>
+                {loginError}
+              </div>
+            )}
             <button type="submit" className="btn btn-primary">
               Sign In
             </button>

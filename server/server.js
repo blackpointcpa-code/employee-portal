@@ -7,11 +7,11 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware - Configure CORS for production
+// Middleware - Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://blackpoint-frontend.onrender.com', 'https://blackpoint-api.onrender.com']
-    : '*',
+    : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   optionsSuccessStatus: 200
 };

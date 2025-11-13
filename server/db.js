@@ -8,6 +8,33 @@ const usePostgres = isProduction && process.env.DATABASE_URL;
 let db;
 let isPostgresDB = false;
 
+// Helper to convert boolean values and SQL syntax
+const convertSQL = (sql, params) => {
+  if (!usePostgres) return { sql, params };
+  
+  // Convert SQLite placeholders (?) to PostgreSQL ($1, $2, etc.)
+  let pgSql = sql;
+  let paramIndex = 1;
+  while (pgSql.includes('?')) {
+    pgSql = pgSql.replace('?', `$${paramIndex}`);
+    paramIndex++;
+  }
+  
+  // Convert boolean comparisons: "= 0" to "= FALSE" and "= 1" to "= TRUE"
+  pgSql = pgSql.replace(/=\s*0(?=\s|$|\))/g, '= FALSE');
+  pgSql = pgSql.replace(/=\s*1(?=\s|$|\))/g, '= TRUE');
+  
+  // Convert boolean values in params
+  const pgParams = params.map(param => {
+    if (param === 0 || param === 1) {
+      return param === 1;
+    }
+    return param;
+  });
+  
+  return { sql: pgSql, params: pgParams };
+};
+
 if (usePostgres) {
   // PostgreSQL for production
   console.log('Using PostgreSQL database');
@@ -23,15 +50,9 @@ if (usePostgres) {
   // Wrapper to make PostgreSQL work like SQLite
   db = {
     run: (sql, params = [], callback = () => {}) => {
-      // Convert SQLite placeholders (?) to PostgreSQL ($1, $2, etc.)
-      let pgSql = sql;
-      let paramIndex = 1;
-      while (pgSql.includes('?')) {
-        pgSql = pgSql.replace('?', `$${paramIndex}`);
-        paramIndex++;
-      }
+      const { sql: pgSql, params: pgParams } = convertSQL(sql, params);
       
-      pool.query(pgSql, params)
+      pool.query(pgSql, pgParams)
         .then(result => {
           if (callback) callback(null);
         })
@@ -42,14 +63,9 @@ if (usePostgres) {
     },
     
     get: (sql, params = [], callback) => {
-      let pgSql = sql;
-      let paramIndex = 1;
-      while (pgSql.includes('?')) {
-        pgSql = pgSql.replace('?', `$${paramIndex}`);
-        paramIndex++;
-      }
+      const { sql: pgSql, params: pgParams } = convertSQL(sql, params);
       
-      pool.query(pgSql, params)
+      pool.query(pgSql, pgParams)
         .then(result => callback(null, result.rows[0] || null))
         .catch(err => {
           console.error('DB Error:', err);
@@ -58,14 +74,9 @@ if (usePostgres) {
     },
     
     all: (sql, params = [], callback) => {
-      let pgSql = sql;
-      let paramIndex = 1;
-      while (pgSql.includes('?')) {
-        pgSql = pgSql.replace('?', `$${paramIndex}`);
-        paramIndex++;
-      }
+      const { sql: pgSql, params: pgParams } = convertSQL(sql, params);
       
-      pool.query(pgSql, params)
+      pool.query(pgSql, pgParams)
         .then(result => callback(null, result.rows))
         .catch(err => {
           console.error('DB Error:', err);

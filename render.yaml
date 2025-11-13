@@ -1,0 +1,41 @@
+services:
+  # Backend API Server
+  - type: web
+    name: blackpoint-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/tasks
+
+  # Frontend Static Site
+  - type: web
+    name: blackpoint-frontend
+    env: static
+    region: oregon
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: ./client/build
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: blackpoint-api
+          envVarKey: RENDER_EXTERNAL_URL

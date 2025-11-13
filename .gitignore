@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+npm-debug.log*
+.env
+.env.local
+
+# Server
+server/blackpoint.db
+server/blackpoint.db-journal
+
+# Client
+client/build/
+client/.env.local

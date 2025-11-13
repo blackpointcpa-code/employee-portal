@@ -49,7 +49,8 @@ db.serialize(() => {
       date TEXT NOT NULL,
       completed_at DATETIME,
       is_default BOOLEAN DEFAULT 0,
-      created_by TEXT
+      created_by TEXT,
+      sort_order INTEGER DEFAULT 0
     )
   `);
 
@@ -375,11 +376,11 @@ const ensureDailyTasks = (date, callback) => {
 
           if (defaultTasks.length > 0) {
             const stmt = db.prepare(
-              'INSERT INTO tasks (task_name, description, date, is_default) VALUES (?, ?, ?, 1)'
+              'INSERT INTO tasks (task_name, description, date, is_default, sort_order) VALUES (?, ?, ?, 1, ?)'
             );
 
-            defaultTasks.forEach(task => {
-              stmt.run(task.task_name, task.description, date);
+            defaultTasks.forEach((task, index) => {
+              stmt.run(task.task_name, task.description, date, index);
             });
 
             stmt.finalize(() => {

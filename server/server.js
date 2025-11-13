@@ -107,6 +107,35 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug endpoint to check database status
+app.get('/api/debug/database', (req, res) => {
+  const info = {};
+  
+  db.get('SELECT COUNT(*) as count FROM default_tasks', [], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    info.default_tasks_count = row.count;
+    
+    db.get('SELECT COUNT(*) as count FROM tasks WHERE date = ?', [getToday()], (err2, row2) => {
+      if (err2) {
+        return res.status(500).json({ error: err2.message });
+      }
+      info.tasks_today_count = row2.count;
+      
+      db.all('SELECT * FROM default_tasks ORDER BY sort_order', [], (err3, tasks) => {
+        if (err3) {
+          return res.status(500).json({ error: err3.message });
+        }
+        info.default_tasks = tasks;
+        info.today_date = getToday();
+        
+        res.json(info);
+      });
+    });
+  });
+});
+
 // ============ TIME ENTRY ENDPOINTS ============
 
 // Clock In

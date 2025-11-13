@@ -56,7 +56,15 @@ db.serialize(() => {
 
   // Insert default daily tasks if they don't exist
   db.get('SELECT COUNT(*) as count FROM default_tasks', [], (err, row) => {
-    if (!err && row.count === 0) {
+    if (err) {
+      console.error('Error checking default_tasks:', err);
+      return;
+    }
+    
+    console.log('Default tasks count:', row.count);
+    
+    if (row.count === 0) {
+      console.log('Inserting default tasks...');
       const defaultTasks = [
         { name: 'Check and respond to emails', description: 'Review inbox and reply to priority messages', order: 1 },
         { name: 'Review pending invoices', description: 'Check for any outstanding client invoices and load into melio', order: 2 },
@@ -69,7 +77,11 @@ db.serialize(() => {
       defaultTasks.forEach(task => {
         stmt.run(task.name, task.description, task.order);
       });
-      stmt.finalize();
+      stmt.finalize(() => {
+        console.log('Default tasks inserted successfully');
+      });
+    } else {
+      console.log('Default tasks already exist');
     }
   });
 });
@@ -300,21 +312,29 @@ app.get('/api/payroll-report', (req, res) => {
 
 // Helper function to auto-populate daily tasks
 const ensureDailyTasks = (date, callback) => {
+  console.log('ensureDailyTasks called for date:', date);
+  
   // Check if default tasks already exist for this date
   db.get(
     'SELECT COUNT(*) as count FROM tasks WHERE date = ? AND is_default = 1',
     [date],
     (err, row) => {
       if (err) {
+        console.error('Error checking tasks for date:', err);
         return callback(err);
       }
+
+      console.log('Existing tasks for date', date, ':', row.count);
 
       // If default tasks don't exist for this date, create them
       if (row.count === 0) {
         db.all('SELECT * FROM default_tasks ORDER BY sort_order', [], (err, defaultTasks) => {
           if (err) {
+            console.error('Error fetching default_tasks:', err);
             return callback(err);
           }
+
+          console.log('Found default tasks:', defaultTasks.length);
 
           if (defaultTasks.length > 0) {
             const stmt = db.prepare(
@@ -325,7 +345,10 @@ const ensureDailyTasks = (date, callback) => {
               stmt.run(task.task_name, task.description, date);
             });
 
-            stmt.finalize(callback);
+            stmt.finalize(() => {
+              console.log('Daily tasks created for', date);
+              callback();
+            });
           } else {
             callback(null);
           }

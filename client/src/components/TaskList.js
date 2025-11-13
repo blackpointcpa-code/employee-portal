@@ -155,7 +155,7 @@ function TaskList({ employeeName }) {
         )}
 
         {incompleteTasks.map(task => (
-          <div key={task.id} className={`task-item ${task.is_default ? 'task-default' : ''}`}>
+          <div key={task.id} className={`task-item ${task.is_default === 1 ? 'task-default' : ''}`}>
             <div className="task-content">
               <input
                 type="checkbox"
@@ -166,7 +166,7 @@ function TaskList({ employeeName }) {
               <div className="task-details">
                 <div className="task-name">
                   {task.task_name}
-                  {task.is_default && <span className="default-badge">Daily</span>}
+                  {task.is_default === 1 && <span className="default-badge">Daily</span>}
                   {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
                 </div>
                 {task.description && (
@@ -174,7 +174,7 @@ function TaskList({ employeeName }) {
                 )}
               </div>
             </div>
-            {!task.is_default && (
+            {task.is_default !== 1 && (
               <button
                 onClick={() => handleDeleteTask(task.id)}
                 className="btn-delete"
@@ -192,7 +192,7 @@ function TaskList({ employeeName }) {
               <span>Completed</span>
             </div>
             {completedTasks.map(task => (
-              <div key={task.id} className={`task-item task-completed ${task.is_default ? 'task-default' : ''}`}>
+              <div key={task.id} className={`task-item task-completed ${task.is_default === 1 ? 'task-default' : ''}`}>
                 <div className="task-content">
                   <input
                     type="checkbox"
@@ -203,7 +203,7 @@ function TaskList({ employeeName }) {
                   <div className="task-details">
                     <div className="task-name">
                       {task.task_name}
-                      {task.is_default && <span className="default-badge">Daily</span>}
+                      {task.is_default === 1 && <span className="default-badge">Daily</span>}
                       {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
                     </div>
                     {task.description && (
@@ -211,7 +211,7 @@ function TaskList({ employeeName }) {
                     )}
                   </div>
                 </div>
-                {!task.is_default && (
+                {task.is_default !== 1 && (
                   <button
                     onClick={() => handleDeleteTask(task.id)}
                     className="btn-delete"

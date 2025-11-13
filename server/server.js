@@ -12,9 +12,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Initialize Database
-// Use /tmp directory in production (Render requires writable location)
+// Use persistent disk in production (Render disk mount at /data)
 const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/tmp/blackpoint.db' 
+  ? '/data/blackpoint.db' 
   : path.join(__dirname, 'blackpoint.db');
 
 console.log('Database path:', dbPath);

@@ -15,6 +15,10 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /
+    disk:
+      name: blackpoint-data
+      mountPath: /data
+      sizeGB: 1
 
   # Frontend Static Site
   - type: web

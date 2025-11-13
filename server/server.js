@@ -409,7 +409,7 @@ app.get('/api/tasks', (req, res) => {
     }
 
     db.all(
-      'SELECT * FROM tasks WHERE date = ? ORDER BY completed ASC, is_default DESC, id ASC',
+      'SELECT * FROM tasks WHERE date = ? ORDER BY completed ASC, sort_order ASC, id ASC',
       [today],
       (err, tasks) => {
         if (err) {
@@ -426,22 +426,36 @@ app.post('/api/tasks', (req, res) => {
   const { taskName, description, date, createdBy } = req.body;
   const today = date || getToday();
 
-  db.run(
-    'INSERT INTO tasks (task_name, description, date, created_by) VALUES (?, ?, ?, ?)',
-    [taskName, description, today, createdBy],
-    function(err) {
+  // Get the max sort_order for this date to append at the end
+  db.get(
+    'SELECT MAX(sort_order) as max_order FROM tasks WHERE date = ?',
+    [today],
+    (err, row) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
-      res.json({
-        id: this.lastID,
-        taskName,
-        description,
-        completed: false,
-        date: today,
-        createdBy
-      });
+      const sortOrder = (row.max_order || 0) + 1;
+
+      db.run(
+        'INSERT INTO tasks (task_name, description, date, created_by, sort_order) VALUES (?, ?, ?, ?, ?)',
+        [taskName, description, today, createdBy, sortOrder],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          res.json({
+            id: this.lastID,
+            taskName,
+            description,
+            completed: false,
+            date: today,
+            createdBy,
+            sortOrder
+          });
+        }
+      );
     }
   );
 });
@@ -468,6 +482,28 @@ app.patch('/api/tasks/:id', (req, res) => {
       });
     }
   );
+});
+
+// Reorder tasks
+app.put('/api/tasks/reorder', (req, res) => {
+  const { tasks } = req.body;
+
+  if (!tasks || !Array.isArray(tasks)) {
+    return res.status(400).json({ error: 'Invalid tasks array' });
+  }
+
+  const stmt = db.prepare('UPDATE tasks SET sort_order = ? WHERE id = ?');
+
+  tasks.forEach((task, index) => {
+    stmt.run(index, task.id);
+  });
+
+  stmt.finalize((err) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Tasks reordered successfully' });
+  });
 });
 
 // Delete task

@@ -484,6 +484,30 @@ body {
   flex: 1;
 }
 
+.drag-handle {
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: grab;
+  padding: 0 8px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-item.dragging {
+  opacity: 0.5;
+  background-color: #f3f4f6;
+}
+
+.dragging-over {
+  background-color: #f9fafb;
+  border-radius: 8px;
+}
+
 .task-checkbox {
   width: 20px;
   height: 20px;

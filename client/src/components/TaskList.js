@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 function TaskList({ employeeName }) {
   const [tasks, setTasks] = useState([]);
@@ -91,6 +92,34 @@ function TaskList({ employeeName }) {
     }
   };
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    if (sourceIndex === destIndex) return;
+
+    // Only allow reordering within incomplete tasks
+    const reorderedIncompleteTasks = Array.from(incompleteTasks);
+    const [removed] = reorderedIncompleteTasks.splice(sourceIndex, 1);
+    reorderedIncompleteTasks.splice(destIndex, 0, removed);
+
+    // Update local state immediately for smooth UX
+    const updatedTasks = [...reorderedIncompleteTasks, ...completedTasks];
+    setTasks(updatedTasks);
+
+    // Send update to server
+    try {
+      await axios.put('/api/tasks/reorder', {
+        tasks: reorderedIncompleteTasks.map(task => ({ id: task.id }))
+      });
+    } catch (error) {
+      console.error('Error reordering tasks:', error);
+      fetchTasks(); // Revert on error
+    }
+  };
+
   const completedTasks = tasks.filter(task => task.completed);
   const incompleteTasks = tasks.filter(task => !task.completed);
   const completionRate = tasks.length > 0 
@@ -147,44 +176,66 @@ function TaskList({ employeeName }) {
         </form>
       )}
 
-      <div className="tasks-container">
-        {incompleteTasks.length === 0 && completedTasks.length === 0 && (
-          <div className="empty-state">
-            <p>No tasks for today. Add your first task to get started!</p>
-          </div>
-        )}
-
-        {incompleteTasks.map(task => (
-          <div key={task.id} className={`task-item ${task.is_default === 1 ? 'task-default' : ''}`}>
-            <div className="task-content">
-              <input
-                type="checkbox"
-                checked={false}
-                onChange={() => handleToggleComplete(task.id, task.completed)}
-                className="task-checkbox"
-              />
-              <div className="task-details">
-                <div className="task-name">
-                  {task.task_name}
-                  {task.is_default === 1 && <span className="default-badge">Daily</span>}
-                  {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
-                </div>
-                {task.description && (
-                  <div className="task-description">{task.description}</div>
-                )}
-              </div>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="tasks-container">
+          {incompleteTasks.length === 0 && completedTasks.length === 0 && (
+            <div className="empty-state">
+              <p>No tasks for today. Add your first task to get started!</p>
             </div>
-            {task.is_default !== 1 && (
-              <button
-                onClick={() => handleDeleteTask(task.id)}
-                className="btn-delete"
-                title="Delete task"
+          )}
+
+          <Droppable droppableId="incomplete-tasks">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={snapshot.isDraggingOver ? 'dragging-over' : ''}
               >
-                ✕
-              </button>
+                {incompleteTasks.map((task, index) => (
+                  <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`task-item ${task.is_default === 1 ? 'task-default' : ''} ${snapshot.isDragging ? 'dragging' : ''}`}
+                      >
+                        <div className="task-content">
+                          <div className="drag-handle">⋮⋮</div>
+                          <input
+                            type="checkbox"
+                            checked={false}
+                            onChange={() => handleToggleComplete(task.id, task.completed)}
+                            className="task-checkbox"
+                          />
+                          <div className="task-details">
+                            <div className="task-name">
+                              {task.task_name}
+                              {task.is_default === 1 && <span className="default-badge">Daily</span>}
+                              {task.created_by && <span className="created-by-badge">by {task.created_by}</span>}
+                            </div>
+                            {task.description && (
+                              <div className="task-description">{task.description}</div>
+                            )}
+                          </div>
+                        </div>
+                        {task.is_default !== 1 && (
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="btn-delete"
+                            title="Delete task"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
             )}
-          </div>
-        ))}
+          </Droppable>
 
         {completedTasks.length > 0 && (
           <>
@@ -224,7 +275,8 @@ function TaskList({ employeeName }) {
             ))}
           </>
         )}
-      </div>
+        </div>
+      </DragDropContext>
     </div>
   );
 }

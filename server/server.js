@@ -12,11 +12,18 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Initialize Database
-const db = new sqlite3.Database(path.join(__dirname, 'blackpoint.db'), (err) => {
+// Use /tmp directory in production (Render requires writable location)
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/tmp/blackpoint.db' 
+  : path.join(__dirname, 'blackpoint.db');
+
+console.log('Database path:', dbPath);
+
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
-    console.log('Database connected');
+    console.log('Database connected successfully at:', dbPath);
   }
 });
 

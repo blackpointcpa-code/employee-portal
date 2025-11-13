@@ -1,9 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
+const { db } = require('./db');
+const SQL = require('./sql');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -19,86 +18,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-// Initialize Database
-// For Render: use /opt/render/project/src which persists between builds
-let dbPath;
-if (process.env.NODE_ENV === 'production') {
-  const dataDir = '/opt/render/project/src';
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  dbPath = path.join(dataDir, 'blackpoint.db');
-} else {
-  dbPath = path.join(__dirname, 'blackpoint.db');
-}
-
-console.log('Database path:', dbPath);
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Database connected successfully at:', dbPath);
-  }
-});
-
 // Create tables
 db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS time_entries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      employee_name TEXT NOT NULL,
-      clock_in DATETIME NOT NULL,
-      clock_out DATETIME,
-      duration_minutes INTEGER,
-      date TEXT NOT NULL
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      task_name TEXT NOT NULL,
-      description TEXT,
-      completed BOOLEAN DEFAULT 0,
-      date TEXT NOT NULL,
-      completed_at DATETIME,
-      is_default BOOLEAN DEFAULT 0,
-      created_by TEXT,
-      sort_order INTEGER DEFAULT 0
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS default_tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      task_name TEXT NOT NULL,
-      description TEXT,
-      sort_order INTEGER DEFAULT 0
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS clients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_name TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_id INTEGER NOT NULL,
-      project_name TEXT NOT NULL,
-      description TEXT,
-      due_date TEXT NOT NULL,
-      completed BOOLEAN DEFAULT 0,
-      completed_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (client_id) REFERENCES clients(id)
-    )
-  `);
+  db.run(SQL.createTimeEntries);
+  db.run(SQL.createTasks);
+  db.run(SQL.createDefaultTasks);
+  db.run(SQL.createClients);
+  db.run(SQL.createProjects);
 
   // Insert default daily tasks if they don't exist
   db.get('SELECT COUNT(*) as count FROM default_tasks', [], (err, row) => {

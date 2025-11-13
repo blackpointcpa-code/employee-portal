@@ -63,6 +63,28 @@ db.serialize(() => {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS clients (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      project_name TEXT NOT NULL,
+      description TEXT,
+      due_date TEXT NOT NULL,
+      completed BOOLEAN DEFAULT 0,
+      completed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id)
+    )
+  `);
+
   // Insert default daily tasks if they don't exist
   db.get('SELECT COUNT(*) as count FROM default_tasks', [], (err, row) => {
     if (err) {
@@ -602,6 +624,207 @@ app.delete('/api/default-tasks/:id', (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     res.json({ message: 'Default task deleted successfully' });
+  });
+});
+
+// ============ CLIENT ENDPOINTS ============
+
+// Get all clients
+app.get('/api/clients', (req, res) => {
+  db.all('SELECT * FROM clients ORDER BY client_name', [], (err, clients) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(clients);
+  });
+});
+
+// Add a new client
+app.post('/api/clients', (req, res) => {
+  const { clientName } = req.body;
+
+  if (!clientName || !clientName.trim()) {
+    return res.status(400).json({ error: 'Client name is required' });
+  }
+
+  db.run(
+    'INSERT INTO clients (client_name) VALUES (?)',
+    [clientName.trim()],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        id: this.lastID,
+        clientName: clientName.trim()
+      });
+    }
+  );
+});
+
+// Delete a client (and all associated projects)
+app.delete('/api/clients/:id', (req, res) => {
+  const { id } = req.params;
+
+  // First delete all projects for this client
+  db.run('DELETE FROM projects WHERE client_id = ?', [id], (err) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Then delete the client
+    db.run('DELETE FROM clients WHERE id = ?', [id], function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Client and associated projects deleted successfully' });
+    });
+  });
+});
+
+// ============ PROJECT ENDPOINTS ============
+
+// Get all projects (with client info)
+app.get('/api/projects', (req, res) => {
+  const query = `
+    SELECT 
+      projects.*,
+      clients.client_name
+    FROM projects
+    JOIN clients ON projects.client_id = clients.id
+    ORDER BY projects.due_date, projects.completed, clients.client_name
+  `;
+
+  db.all(query, [], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
+// Get projects for a specific client
+app.get('/api/projects/client/:clientId', (req, res) => {
+  const { clientId } = req.params;
+
+  db.all(
+    'SELECT * FROM projects WHERE client_id = ? ORDER BY due_date, completed',
+    [clientId],
+    (err, projects) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(projects);
+    }
+  );
+});
+
+// Get overdue and due-today projects for daily task integration
+app.get('/api/projects/due', (req, res) => {
+  const today = getToday();
+  
+  const query = `
+    SELECT 
+      projects.*,
+      clients.client_name
+    FROM projects
+    JOIN clients ON projects.client_id = clients.id
+    WHERE projects.completed = 0 
+      AND projects.due_date <= ?
+    ORDER BY projects.due_date
+  `;
+
+  db.all(query, [today], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
+// Add a new project
+app.post('/api/projects', (req, res) => {
+  const { clientId, projectName, description, dueDate } = req.body;
+
+  if (!clientId || !projectName || !dueDate) {
+    return res.status(400).json({ error: 'Client, project name, and due date are required' });
+  }
+
+  db.run(
+    'INSERT INTO projects (client_id, project_name, description, due_date) VALUES (?, ?, ?, ?)',
+    [clientId, projectName, description || '', dueDate],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        id: this.lastID,
+        clientId,
+        projectName,
+        description: description || '',
+        dueDate
+      });
+    }
+  );
+});
+
+// Update a project
+app.patch('/api/projects/:id', (req, res) => {
+  const { id } = req.params;
+  const { projectName, description, dueDate, completed } = req.body;
+
+  const updates = [];
+  const params = [];
+
+  if (projectName !== undefined) {
+    updates.push('project_name = ?');
+    params.push(projectName);
+  }
+  if (description !== undefined) {
+    updates.push('description = ?');
+    params.push(description);
+  }
+  if (dueDate !== undefined) {
+    updates.push('due_date = ?');
+    params.push(dueDate);
+  }
+  if (completed !== undefined) {
+    updates.push('completed = ?');
+    params.push(completed ? 1 : 0);
+    if (completed) {
+      updates.push('completed_at = ?');
+      params.push(new Date().toISOString());
+    } else {
+      updates.push('completed_at = NULL');
+    }
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  params.push(id);
+  const query = `UPDATE projects SET ${updates.join(', ')} WHERE id = ?`;
+
+  db.run(query, params, function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Project updated successfully' });
+  });
+});
+
+// Delete a project
+app.delete('/api/projects/:id', (req, res) => {
+  const { id } = req.params;
+
+  db.run('DELETE FROM projects WHERE id = ?', [id], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Project deleted successfully' });
   });
 });
 

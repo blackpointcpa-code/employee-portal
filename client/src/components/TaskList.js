@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 function TaskList({ employeeName }) {
   const [tasks, setTasks] = useState([]);
+  const [dueProjects, setDueProjects] = useState([]);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -13,6 +14,7 @@ function TaskList({ employeeName }) {
 
   useEffect(() => {
     fetchTasks();
+    fetchDueProjects();
   }, []);
 
   const fetchTasks = async () => {
@@ -21,6 +23,15 @@ function TaskList({ employeeName }) {
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+    }
+  };
+
+  const fetchDueProjects = async () => {
+    try {
+      const response = await axios.get('/api/projects/due');
+      setDueProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching due projects:', error);
     }
   };
 
@@ -126,6 +137,27 @@ function TaskList({ employeeName }) {
     ? Math.round((completedTasks.length / tasks.length) * 100) 
     : 0;
 
+  const handleToggleProjectComplete = async (projectId, currentStatus) => {
+    try {
+      await axios.patch(`/api/projects/${projectId}`, {
+        completed: !currentStatus
+      });
+      fetchDueProjects();
+    } catch (error) {
+      console.error('Error updating project:', error);
+    }
+  };
+
+  const isOverdue = (dueDate) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dueDate < today;
+  };
+
+  const isDueToday = (dueDate) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dueDate === today;
+  };
+
   return (
     <div className="task-list">
       <div className="task-header">
@@ -150,6 +182,46 @@ function TaskList({ employeeName }) {
               style={{ width: `${completionRate}%` }}
             ></div>
           </div>
+        </div>
+      )}
+
+      {dueProjects.length > 0 && (
+        <div className="due-projects-section">
+          <h3 className="due-projects-header">
+            ⚠️ Projects Due Today or Overdue
+          </h3>
+          {dueProjects.map(project => (
+            <div
+              key={`project-${project.id}`}
+              className={`task-item project-task ${
+                isOverdue(project.due_date) ? 'overdue' : 'due-today'
+              }`}
+            >
+              <div className="task-content">
+                <input
+                  type="checkbox"
+                  checked={project.completed}
+                  onChange={() => handleToggleProjectComplete(project.id, project.completed)}
+                  className="task-checkbox"
+                />
+                <div className="task-details">
+                  <div className="task-name">
+                    {project.project_name}
+                    <span className="client-badge-small">{project.client_name}</span>
+                    <span className={`due-badge ${isOverdue(project.due_date) ? 'overdue' : 'today'}`}>
+                      {isOverdue(project.due_date) ? '🔴 Overdue' : '📅 Due Today'}
+                    </span>
+                  </div>
+                  {project.description && (
+                    <div className="task-description">{project.description}</div>
+                  )}
+                  <div className="project-due-date">
+                    Due: {new Date(project.due_date + 'T00:00:00').toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

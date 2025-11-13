@@ -4,6 +4,7 @@ import TimeClock from './components/TimeClock';
 import TaskList from './components/TaskList';
 import TimeEntries from './components/TimeEntries';
 import PayrollReport from './components/PayrollReport';
+import Projects from './components/Projects';
 
 function App() {
   const [employeeName, setEmployeeName] = useState('');
@@ -102,6 +103,12 @@ function App() {
           🏠 Dashboard
         </button>
         <button 
+          className={`nav-tab ${activeTab === 'projects' ? 'active' : ''}`}
+          onClick={() => setActiveTab('projects')}
+        >
+          📋 Projects
+        </button>
+        <button 
           className={`nav-tab ${activeTab === 'payroll' ? 'active' : ''}`}
           onClick={() => setActiveTab('payroll')}
         >
@@ -123,6 +130,12 @@ function App() {
             <div className="section entries-section">
               <TimeEntries employeeName={employeeName} />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'projects' && (
+          <div className="projects-tab">
+            <Projects />
           </div>
         )}
 

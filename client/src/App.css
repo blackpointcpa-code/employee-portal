@@ -598,6 +598,80 @@ body {
   opacity: 0.6;
 }
 
+.due-projects-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fef2f2;
+  border-radius: 8px;
+  border: 2px solid #fca5a5;
+}
+
+.due-projects-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--danger-color);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-task {
+  background: white;
+  margin-bottom: 12px;
+}
+
+.project-task:last-child {
+  margin-bottom: 0;
+}
+
+.project-task.overdue {
+  border-left: 4px solid var(--danger-color);
+}
+
+.project-task.due-today {
+  border-left: 4px solid var(--warning-color);
+}
+
+.client-badge-small {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.due-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.due-badge.overdue {
+  background-color: #fef2f2;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+}
+
+.due-badge.today {
+  background-color: #fffbeb;
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+.project-due-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 .task-completed .task-name {
   text-decoration: line-through;
   color: var(--text-secondary);
@@ -961,4 +1035,268 @@ body {
 
 .payroll-container {
   padding: 24px;
+}
+
+/* ============ PROJECTS PAGE ============ */
+
+.projects-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.projects-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  height: calc(100vh - 180px);
+}
+
+.clients-sidebar {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+}
+
+.client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.client-item {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-color);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.client-item:hover {
+  background: #e0e7ff;
+  border-color: var(--primary-color);
+}
+
+.client-item.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.client-count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.client-item.active .client-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-delete-client {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.client-item-wrapper:hover .btn-delete-client {
+  opacity: 1;
+}
+
+.btn-delete-client:hover {
+  background: #dc2626;
+}
+
+.projects-main {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+}
+
+.project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-color);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-card {
+  background: var(--bg-color);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.project-card:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--primary-color);
+}
+
+.project-card.completed {
+  opacity: 0.6;
+  background: #f1f5f9;
+}
+
+.project-card.overdue {
+  border-color: var(--danger-color);
+  background: #fef2f2;
+}
+
+.project-card.due-today {
+  border-color: var(--warning-color);
+  background: #fffbeb;
+}
+
+.project-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.project-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.project-info {
+  flex: 1;
+}
+
+.project-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.project-card.completed .project-info h3 {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.project-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.client-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.due-date {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.due-date.overdue {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.due-date.due-today {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.project-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.project-description {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.project-description p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  font-size: 16px;
+}
+
+.btn-danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Responsive for Projects */
+@media (max-width: 968px) {
+  .projects-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .clients-sidebar {
+    max-height: 300px;
+  }
 }

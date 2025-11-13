@@ -19,8 +19,9 @@ services:
   - type: web
     name: blackpoint-frontend
     env: static
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: ./client/build
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
     pullRequestPreviewsEnabled: false
     headers:
       - path: /*

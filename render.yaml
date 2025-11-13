@@ -41,7 +41,4 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          type: web
-          name: blackpoint-api
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://blackpoint-api.onrender.com

@@ -6,6 +6,13 @@ function TimeClock({ employeeName }) {
   const [currentEntry, setCurrentEntry] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualEntry, setManualEntry] = useState({
+    employeeName: 'Kyla Abbott',
+    date: new Date().toISOString().split('T')[0],
+    clockIn: '',
+    clockOut: ''
+  });
 
   useEffect(() => {
     checkStatus();
@@ -77,6 +84,37 @@ function TimeClock({ employeeName }) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
+  const handleManualEntrySubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      // Combine date with times to create full timestamps
+      const clockInDateTime = new Date(`${manualEntry.date}T${manualEntry.clockIn}`).toISOString();
+      const clockOutDateTime = new Date(`${manualEntry.date}T${manualEntry.clockOut}`).toISOString();
+      
+      await axios.post('/api/manual-time-entry', {
+        employeeName: manualEntry.employeeName,
+        clockIn: clockInDateTime,
+        clockOut: clockOutDateTime,
+        date: manualEntry.date
+      });
+      
+      alert('Time entry added successfully!');
+      setShowManualEntry(false);
+      setManualEntry({
+        employeeName: 'Kyla Abbott',
+        date: new Date().toISOString().split('T')[0],
+        clockIn: '',
+        clockOut: ''
+      });
+    } catch (error) {
+      alert(error.response?.data?.error || 'Error adding manual time entry');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="time-clock">
       <h2>Time Clock</h2>
@@ -129,6 +167,74 @@ function TimeClock({ employeeName }) {
           </button>
         )}
       </div>
+
+      {employeeName === 'Brendan Abbott' && (
+        <div className="manual-entry-section">
+          <button
+            onClick={() => setShowManualEntry(!showManualEntry)}
+            className="btn btn-secondary"
+            style={{ marginTop: '20px', width: '100%' }}
+          >
+            {showManualEntry ? 'Cancel' : 'Add Manual Time Entry'}
+          </button>
+
+          {showManualEntry && (
+            <form onSubmit={handleManualEntrySubmit} className="manual-entry-form">
+              <h3>Add Time Entry</h3>
+              
+              <div className="form-group">
+                <label>Employee</label>
+                <select
+                  value={manualEntry.employeeName}
+                  onChange={(e) => setManualEntry({...manualEntry, employeeName: e.target.value})}
+                  className="input"
+                  required
+                >
+                  <option value="Kyla Abbott">Kyla Abbott</option>
+                  <option value="Brendan Abbott">Brendan Abbott</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  value={manualEntry.date}
+                  onChange={(e) => setManualEntry({...manualEntry, date: e.target.value})}
+                  className="input"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Clock In Time</label>
+                <input
+                  type="time"
+                  value={manualEntry.clockIn}
+                  onChange={(e) => setManualEntry({...manualEntry, clockIn: e.target.value})}
+                  className="input"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Clock Out Time</label>
+                <input
+                  type="time"
+                  value={manualEntry.clockOut}
+                  onChange={(e) => setManualEntry({...manualEntry, clockOut: e.target.value})}
+                  className="input"
+                  required
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="btn btn-primary">
+                {loading ? 'Adding...' : 'Add Time Entry'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }

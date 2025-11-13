@@ -404,6 +404,37 @@ body {
   color: var(--text-primary);
 }
 
+.manual-entry-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.manual-entry-form {
+  background: var(--bg-color);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.manual-entry-form h3 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 /* ============ TASK LIST ============ */
 
 .task-list h2 {

@@ -229,6 +229,36 @@ app.post('/api/clock-out', (req, res) => {
   );
 });
 
+// Manual Time Entry (for managers)
+app.post('/api/manual-time-entry', (req, res) => {
+  const { employeeName, clockIn, clockOut, date } = req.body;
+
+  if (!employeeName || !clockIn || !clockOut || !date) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const duration = calculateDuration(clockIn, clockOut);
+
+  db.run(
+    'INSERT INTO time_entries (employee_name, clock_in, clock_out, duration_minutes, date) VALUES (?, ?, ?, ?, ?)',
+    [employeeName, clockIn, clockOut, duration, date],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        id: this.lastID,
+        employeeName,
+        clockIn,
+        clockOut,
+        duration,
+        date
+      });
+    }
+  );
+});
+
 // Get current status
 app.get('/api/status/:employeeName', (req, res) => {
   const { employeeName } = req.params;

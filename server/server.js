@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -19,10 +20,17 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // Initialize Database
-// Use persistent disk in production (Render disk mount at /data)
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/data/blackpoint.db' 
-  : path.join(__dirname, 'blackpoint.db');
+// For Render: use /opt/render/project/src which persists between builds
+let dbPath;
+if (process.env.NODE_ENV === 'production') {
+  const dataDir = '/opt/render/project/src';
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  dbPath = path.join(dataDir, 'blackpoint.db');
+} else {
+  dbPath = path.join(__dirname, 'blackpoint.db');
+}
 
 console.log('Database path:', dbPath);
 
